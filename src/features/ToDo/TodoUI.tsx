@@ -1,6 +1,6 @@
-import { ChangeEvent, useState } from "react";
+import {ChangeEvent, useEffect, useState} from "react";
 import { useAppDispatch, useAppSelector } from "../../app/Hooks";
-import { selectTodoItems, update__todo } from "./TodoSlice";
+import {loadAllTodo, selectTodoItems, update__todo} from "./TodoSlice";
 import { add__todo, Todo, del__todo } from "./TodoSlice";
 function TodoUI() {
     const [text, setText] = useState("");
@@ -8,21 +8,32 @@ function TodoUI() {
     const [updateTxt, setUpdateTxt] = useState("");
     const dispatch = useAppDispatch();
     const retrieveTodoItems = useAppSelector(selectTodoItems);
+    useEffect(()=>{
+        dispatch(loadAllTodo())
+    },[])
+
     const onChangeHandler = (e: ChangeEvent<HTMLInputElement>) => {
         setText(e.target.value);
     };
     const addTodoHandler = () => {
         dispatch(add__todo(text));
+        console.log(retrieveTodoItems);
         setText("");
     };
     const delToDoHandler = (el: Todo) => {
         dispatch(del__todo(el));
     };
     const updateHandler = (el: Todo) => {
-        setEdit(!edit);
-        let payload: Todo = { ...el, task: updateTxt };
-        dispatch(update__todo(payload));
+        setEdit(true);
+        const payload: Todo = { ...el, title: updateTxt };
+       if(updateTxt){
+           dispatch(update__todo(payload));
+            setEdit(false);
+
+       }
+
     };
+
     return (
         <>
             <div className="">
@@ -45,7 +56,7 @@ function TodoUI() {
                         <div className="" key={el.id}>
                             <div className="">
                                 <span>
-                                    {!edit && el.task}
+                                    {!edit && el.title}
                                     {edit && (
                                         <input
                                             type="text"

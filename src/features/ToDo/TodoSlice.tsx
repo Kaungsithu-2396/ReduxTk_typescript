@@ -1,9 +1,17 @@
-import { PayloadAction, createSlice, nanoid } from "@reduxjs/toolkit";
+import {
+    PayloadAction,
+    createSlice,
+    nanoid,
+    createAsyncThunk,
+} from "@reduxjs/toolkit";
 import { RootState } from "../../app/store";
+import { apiLoadAllToDo } from "./ToDoAPI.tsx";
+
 export interface Todo {
-    id: number;
-    task: string;
-    done: boolean;
+    userId?: string;
+    id: string;
+    title: string;
+    completed?: boolean;
 }
 interface TodoState {
     items: Array<Todo>;
@@ -11,6 +19,12 @@ interface TodoState {
 const initialState: TodoState = {
     items: [],
 };
+export const loadAllTodo = createAsyncThunk("todo/loadAllTodo", async () => {
+    const response = await apiLoadAllToDo();
+    const data = await response.json();
+    return data;
+});
+
 const todoSlice = createSlice({
     name: "todo",
     initialState,
@@ -19,26 +33,36 @@ const todoSlice = createSlice({
             reducer: (state, action: PayloadAction<Todo>) => {
                 state.items.push(action.payload);
             },
-            prepare(task: string): { payload: Todo } {
+            prepare(title: string): { payload: Todo } {
                 return {
                     payload: {
-                        id: Number(nanoid()),
-                        task,
-                        done: false,
+                        id: nanoid(),
+                        title,
+                        completed: false,
                     },
                 };
             },
         },
         del__todo: (state, action: PayloadAction<Todo>) => {
             state.items = state.items.filter((el: Todo) => {
-                el.id !== action.payload.id;
+                return el.id !== action.payload.id;
             });
         },
         update__todo: (state, action: PayloadAction<Todo>) => {
             state.items = state.items.map((el: Todo) =>
-                el.id === action.payload.id ? el.task : action.payload
+                el.id === action.payload.id ? action.payload : el
             );
         },
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(loadAllTodo.pending, (state) =>
+                console.log("Pending state", state)
+            )
+            .addCase(loadAllTodo.fulfilled, (state, action) => {
+                console.log(state);
+                state.items = action.payload;
+            });
     },
 });
 export const { add__todo, del__todo, update__todo } = todoSlice.actions;
